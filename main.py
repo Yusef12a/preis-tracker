@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-🤖 SERVERLESS PREIS-TRACKER
+🤖 SERVERLESS PREIS-TRACKER - VERBESSERTE VERSION
 Überwacht Produktpreise und benachrichtigt dich bei Änderungen via Telegram
 """
 
@@ -11,32 +11,35 @@ from bs4 import BeautifulSoup
 from supabase import create_client
 from datetime import datetime
 import re
+import time
 
 # ============================================
 # KONFIGURATION
 # ============================================
 
-# Umgebungsvariablen (werden von GitHub Actions gesetzt)
 SUPABASE_URL = os.environ.get('SUPABASE_URL')
 SUPABASE_KEY = os.environ.get('SUPABASE_KEY')
 TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
 TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID')
 
-# Produkte die getrackt werden sollen
-# WICHTIG: Hier deine eigenen Produkte eintragen!
+# WICHTIG: Nur einfache Amazon-URLs verwenden (ohne % Zeichen)
 PRODUCTS = [
     {
-        'name': 'PlayStation 5',
-        'url': 'https://www.amazon.de/Playstation%C2%AE5-Digital-Edition-825-GB/dp/B0FN7ZG39D/ref=sr_1_3?__mk_de_DE=%C3%85M%C3%85%C5%BD%C3%95%C3%91&crid=673V2WF6HNSM&dib=eyJ2IjoiMSJ9.Zd2DXQU-z94EU57vri9gcuuLmliL1AeNE91RL4TTyfzuJa3vj2g1jfowwwIkKZpz57kW91RMKa7_9hDuDLapQnV5N_HznK8B24ocggwCc3K3poYZc90KtGJCzaVwVOz2rweW2knTwDWy25e-WGOvnKzRkIauFW26-tE0PxpM3P4Wdhnifd2CyCDvzxFG0TmRZ5sbb_VQuNZiaFnsij4TJ2OgCtLOnHStwYvKfu9wnjQ.we58TqI_42vBiIxRCyxSZxIMn0_ge2oOSHZ6rlRMvRY&dib_tag=se&keywords=PlayStation+5&qid=1769940274&sprefix=playstation+5%2Caps%2C171&sr=8-3'
+        'name': 'Apple AirPods Pro 2',
+        'url': 'https://amzn.eu/d/9Yc7Sb1'
     },
     {
-        'name': 'Apple AirPods Pro',
-        'url': 'https://www.amazon.de/Apple-Kabellose-Ger%C3%A4uschunterdr%C3%BCckung-Herzfrequenzmessung-H%C3%B6rger%C3%A4tefunktion/dp/B0FQF32239/ref=sr_1_4?__mk_de_DE=%C3%85M%C3%85%C5%BD%C3%95%C3%91&crid=2EEPBMH68U6NZ&dib=eyJ2IjoiMSJ9.Z_pcgt2KKWTUeTV1dd-iZS61LreeKf-APdy4AylqTrm7fEVJPnv3Oqe4-2INhmJIro9jhW5oyLzXkKjEErSlLXJc-RSmO58ipU2vd3PDTodpjkNRDIwUOxoWpcly6hNVGk7U5HIXw-eUdaPmsbG9BeCcMyDun-bXnaELNEWiau8khgo4AvGTwLX48QNp_m8x0hwZxD90UWcIlV_L1zu-Sz25V2BQOcBMKOUUVSdgt8U.NIEGNx_SD9x8E9PNzKLckAF5eRYTX9tNFnr6VPQpWFE&dib_tag=se&keywords=Apple+AirPods+Pro&qid=1769940315&sprefix=apple+airpods+pro%2Caps%2C178&sr=8-4'
+        'name': 'PlayStation 5 Slim',
+        'url': 'https://amzn.eu/d/iTETMwl'
     },
-    # Füge weitere Produkte hinzu (einfach kopieren und anpassen)
+    # Füge weitere Produkte hinzu - WICHTIG: Format muss sein: /dp/PRODUKTID
 ]
 
-USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+USER_AGENTS = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+]
 
 # ============================================
 # FUNKTIONEN
@@ -49,9 +52,10 @@ def send_telegram(message):
         data = {
             'chat_id': TELEGRAM_CHAT_ID,
             'text': message,
-            'parse_mode': 'HTML'
+            'parse_mode': 'HTML',
+            'disable_web_page_preview': True
         }
-        response = requests.post(url, data=data)
+        response = requests.post(url, data=data, timeout=10)
         return response.ok
     except Exception as e:
         print(f"❌ Telegram-Fehler: {e}")
@@ -60,40 +64,93 @@ def send_telegram(message):
 def extract_price(text):
     """Extrahiert Preis aus Text (z.B. '499,99 €' → 499.99)"""
     try:
-        # Entferne alles außer Zahlen, Komma und Punkt
-        clean = re.sub(r'[^\d,.]', '', text)
-        # Ersetze Komma durch Punkt
-        clean = clean.replace(',', '.')
-        return float(clean)
+        # Entferne Leerzeichen
+        text = text.replace(' ', '')
+        # Finde Muster wie 499,99 oder 499.99
+        match = re.search(r'(\d+)[,.](\d{2})', text)
+        if match:
+            return float(f"{match.group(1)}.{match.group(2)}")
+        return None
     except:
         return None
 
 def scrape_amazon_price(url):
-    """Scrapt Preis von Amazon"""
+    """Scrapt Preis von Amazon - VERBESSERTE VERSION"""
     try:
-        headers = {'User-Agent': USER_AGENT}
-        response = requests.get(url, headers=headers, timeout=10)
-        soup = BeautifulSoup(response.content, 'html.parser')
-        
-        # Amazon hat verschiedene Preis-Selektoren
-        selectors = [
-            'span.a-price-whole',
-            'span.a-offscreen',
-            'span#priceblock_ourprice',
-            'span#priceblock_dealprice',
-            'span.a-price span.a-offscreen'
-        ]
-        
-        for selector in selectors:
-            element = soup.select_one(selector)
-            if element:
-                price = extract_price(element.get_text())
-                if price and price > 0:
-                    return price
+        # Verschiedene User Agents probieren
+        for user_agent in USER_AGENTS:
+            headers = {
+                'User-Agent': user_agent,
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language': 'de-DE,de;q=0.9,en;q=0.8',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'DNT': '1',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1'
+            }
+            
+            try:
+                response = requests.get(url, headers=headers, timeout=15)
+                
+                if response.status_code != 200:
+                    print(f"   ⚠️  HTTP Status: {response.status_code}")
+                    continue
+                
+                soup = BeautifulSoup(response.content, 'html.parser')
+                
+                # METHODE 1: Preis-Klassen (am zuverlässigsten)
+                price_selectors = [
+                    '.a-price .a-offscreen',
+                    'span.a-price-whole',
+                    '#priceblock_ourprice',
+                    '#priceblock_dealprice',
+                    '.a-price-whole',
+                    'span[class*="price"]',
+                ]
+                
+                for selector in price_selectors:
+                    elements = soup.select(selector)
+                    for element in elements:
+                        price_text = element.get_text()
+                        price = extract_price(price_text)
+                        if price and price > 0 and price < 10000:
+                            print(f"   ✅ Preis gefunden mit Methode: {selector}")
+                            return price
+                
+                # METHODE 2: Suche im gesamten HTML nach Preis-Pattern
+                text = soup.get_text()
+                # Suche nach "EUR 499,99" oder "€ 499,99" Pattern
+                patterns = [
+                    r'EUR\s*(\d+)[,.](\d{2})',
+                    r'€\s*(\d+)[,.](\d{2})',
+                    r'(\d+)[,.](\d{2})\s*€',
+                ]
+                
+                for pattern in patterns:
+                    matches = re.findall(pattern, text)
+                    if matches:
+                        # Nimm den ersten realistischen Preis
+                        for match in matches:
+                            if isinstance(match, tuple):
+                                price = float(f"{match[0]}.{match[1]}")
+                            else:
+                                price = extract_price(match)
+                            
+                            if price and 1 < price < 10000:
+                                print(f"   ✅ Preis gefunden mit Pattern-Suche")
+                                return price
+                
+                # Wenn dieser User-Agent nicht funktioniert, nächsten probieren
+                time.sleep(1)
+                
+            except requests.exceptions.RequestException as e:
+                print(f"   ⚠️  Request-Fehler mit User-Agent {user_agent[:50]}...")
+                continue
         
         return None
+            
     except Exception as e:
-        print(f"❌ Scraping-Fehler: {e}")
+        print(f"   ❌ Scraping-Fehler: {e}")
         return None
 
 def check_prices():
@@ -103,18 +160,24 @@ def check_prices():
     print("="*50)
     
     # Verbinde mit Supabase
-    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    try:
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    except Exception as e:
+        print(f"❌ Supabase-Verbindungsfehler: {e}")
+        send_telegram(f"⚠️ <b>Fehler:</b> Kann nicht mit Datenbank verbinden!")
+        return
     
     checked = 0
     price_drops = 0
     errors = 0
+    new_products = 0
     
     for product in PRODUCTS:
         name = product['name']
         url = product['url']
         
         print(f"\n📦 {name}")
-        print(f"   🔗 {url[:50]}...")
+        print(f"   🔗 {url[:60]}...")
         
         # Scrape aktuellen Preis
         current_price = scrape_amazon_price(url)
@@ -122,6 +185,7 @@ def check_prices():
         if current_price is None:
             print(f"   ⚠️  Preis konnte nicht ermittelt werden")
             errors += 1
+            send_telegram(f"⚠️ Konnte Preis nicht ermitteln für: <b>{name}</b>\n\nBitte prüfe die URL: {url}")
             continue
         
         print(f"   💰 Aktueller Preis: {current_price:.2f} €")
@@ -148,8 +212,7 @@ def check_prices():
                     price_drops += 1
                     
                     # Sende Telegram-Benachrichtigung
-                    message = f"""
-🔔 <b>PREISALARM!</b> 🔔
+                    message = f"""🔔 <b>PREISALARM!</b> 🔔
 
 📦 <b>{name}</b>
 
@@ -157,21 +220,18 @@ def check_prices():
 ✅ Jetzt: {current_price:.2f} €
 📉 Ersparnis: {discount:.2f} € ({discount_percent:.1f}%)
 
-🔗 <a href="{url}">Zum Produkt</a>
-"""
+🔗 <a href="{url}">Zum Produkt</a>"""
                     send_telegram(message)
                     
                     # Prüfe auf neuen Tiefstpreis
                     if current_price < lowest_price:
                         print(f"   🎉 NEUER TIEFSTPREIS!")
-                        lowest_message = f"""
-🏆 <b>NEUER TIEFSTPREIS!</b> 🏆
+                        lowest_message = f"""🏆 <b>NEUER TIEFSTPREIS!</b> 🏆
 
 📦 <b>{name}</b>
 💎 Bester Preis ever: {current_price:.2f} €
 
-🔗 <a href="{url}">Jetzt zuschlagen!</a>
-"""
+🔗 <a href="{url}">Jetzt zuschlagen!</a>"""
                         send_telegram(lowest_message)
                 
                 elif current_price > old_price:
@@ -203,37 +263,39 @@ def check_prices():
                     'lowest_price': current_price
                 }
                 result = supabase.table('products').insert(new_product).execute()
+                new_products += 1
                 
                 # Sende Info
-                message = f"""
-✅ <b>Neues Produkt wird überwacht</b>
+                message = f"""✅ <b>Neues Produkt wird überwacht</b>
 
 📦 {name}
 💰 Startpreis: {current_price:.2f} €
 
-Ich benachrichtige dich bei Preisänderungen!
-"""
+Ich benachrichtige dich bei Preisänderungen!"""
                 send_telegram(message)
                 
         except Exception as e:
             print(f"   ❌ Datenbankfehler: {e}")
             errors += 1
+        
+        # Kleine Pause zwischen Produkten
+        time.sleep(2)
     
     # Zusammenfassung
     print("\n" + "="*50)
     print(f"✅ Check abgeschlossen!")
     print(f"   📊 Produkte geprüft: {checked}")
+    print(f"   ✨ Neue Produkte: {new_products}")
     print(f"   📉 Preissenkungen: {price_drops}")
     print(f"   ❌ Fehler: {errors}")
     
-    # Sende Zusammenfassung (nur wenn Preissenkungen)
-    if price_drops > 0:
-        summary = f"""
-📊 <b>Preis-Check abgeschlossen</b>
+    # Sende Zusammenfassung nur bei Aktivität
+    if price_drops > 0 or new_products > 0:
+        summary = f"""📊 <b>Preis-Check abgeschlossen</b>
 
-✅ {checked} Produkte geprüft
-📉 {price_drops} Preissenkung{'en' if price_drops != 1 else ''}
-"""
+✅ {checked} Produkt{'e' if checked != 1 else ''} geprüft
+✨ {new_products} neue{'s' if new_products == 1 else ''} Produkt{'e' if new_products != 1 else ''}
+📉 {price_drops} Preissenkung{'en' if price_drops != 1 else ''}"""
         send_telegram(summary)
 
 # ============================================
@@ -245,5 +307,7 @@ if __name__ == '__main__':
         check_prices()
     except Exception as e:
         print(f"❌ KRITISCHER FEHLER: {e}")
-        send_telegram(f"⚠️ <b>Fehler beim Preis-Check:</b>\n\n{str(e)}")
+        import traceback
+        traceback.print_exc()
+        send_telegram(f"⚠️ <b>Kritischer Fehler beim Preis-Check:</b>\n\n{str(e)}")
         sys.exit(1)
