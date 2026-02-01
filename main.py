@@ -27,11 +27,11 @@ TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID')
 PRODUCTS = [
     {
         'name': 'PlayStation 5',
-        'url': 'https://www.amazon.de/dp/B0CL5KVKTC'
+        'url': 'https://www.amazon.de/Playstation%C2%AE5-Digital-Edition-825-GB/dp/B0FN7ZG39D/ref=sr_1_3?__mk_de_DE=%C3%85M%C3%85%C5%BD%C3%95%C3%91&crid=673V2WF6HNSM&dib=eyJ2IjoiMSJ9.Zd2DXQU-z94EU57vri9gcuuLmliL1AeNE91RL4TTyfzuJa3vj2g1jfowwwIkKZpz57kW91RMKa7_9hDuDLapQnV5N_HznK8B24ocggwCc3K3poYZc90KtGJCzaVwVOz2rweW2knTwDWy25e-WGOvnKzRkIauFW26-tE0PxpM3P4Wdhnifd2CyCDvzxFG0TmRZ5sbb_VQuNZiaFnsij4TJ2OgCtLOnHStwYvKfu9wnjQ.we58TqI_42vBiIxRCyxSZxIMn0_ge2oOSHZ6rlRMvRY&dib_tag=se&keywords=PlayStation+5&qid=1769940274&sprefix=playstation+5%2Caps%2C171&sr=8-3'
     },
     {
         'name': 'Apple AirPods Pro',
-        'url': 'https://www.amazon.de/dp/B0CHWRXH8B'
+        'url': 'https://www.amazon.de/Apple-Kabellose-Ger%C3%A4uschunterdr%C3%BCckung-Herzfrequenzmessung-H%C3%B6rger%C3%A4tefunktion/dp/B0FQF32239/ref=sr_1_4?__mk_de_DE=%C3%85M%C3%85%C5%BD%C3%95%C3%91&crid=2EEPBMH68U6NZ&dib=eyJ2IjoiMSJ9.Z_pcgt2KKWTUeTV1dd-iZS61LreeKf-APdy4AylqTrm7fEVJPnv3Oqe4-2INhmJIro9jhW5oyLzXkKjEErSlLXJc-RSmO58ipU2vd3PDTodpjkNRDIwUOxoWpcly6hNVGk7U5HIXw-eUdaPmsbG9BeCcMyDun-bXnaELNEWiau8khgo4AvGTwLX48QNp_m8x0hwZxD90UWcIlV_L1zu-Sz25V2BQOcBMKOUUVSdgt8U.NIEGNx_SD9x8E9PNzKLckAF5eRYTX9tNFnr6VPQpWFE&dib_tag=se&keywords=Apple+AirPods+Pro&qid=1769940315&sprefix=apple+airpods+pro%2Caps%2C178&sr=8-4'
     },
     # Füge weitere Produkte hinzu (einfach kopieren und anpassen)
 ]
