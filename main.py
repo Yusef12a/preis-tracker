@@ -26,11 +26,11 @@ TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID')
 PRODUCTS = [
     {
         'name': 'Apple AirPods Pro 2',
-        'url': 'https://www.amazon.de/dp/B0FQF32239'
+        'url': 'https://www.otto.de/p/share/w/2029107354'
     },
     {
         'name': 'PlayStation 5 Slim',
-        'url': 'https://www.amazon.de/dp/B0BKX48NZ9'
+        'url': 'https://www.otto.de/p/share/w/1802445948'
     },
     # Füge weitere Produkte hinzu - WICHTIG: Format muss sein: /dp/PRODUKTID
 ]
