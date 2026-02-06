@@ -33,8 +33,8 @@ PRODUCTS = [
         'url': 'https://www.otto.de/p/share/w/1802445948'
     },
     {
-        'name': 'KOPP Vital Bio-Aloe-Vera-Saft ',
-        'url': 'https://www.amazon.de/dp/B09B7GW723'
+        'name': 'WF-C700N wireless In-Ear-Kopfhörer',
+        'url': 'https://www.otto.de/p/share/w/1729365106'
     },
     # Füge weitere Produkte hinzu - WICHTIG: Format muss sein: /dp/PRODUKTID
 ]
