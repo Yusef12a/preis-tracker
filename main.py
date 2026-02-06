@@ -24,9 +24,9 @@ TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID')
 
 # WICHTIG: Nur einfache Amazon-URLs verwenden (ohne % Zeichen)
 PRODUCTS = [
-    {
-        'name': 'Apple AirPods Pro 2',
-        'url': 'https://www.otto.de/p/share/w/2029107354'
+    {
+      'name': 'Apple AirPods Pro 2',
+      'url': 'https://www.otto.de/p/share/w/2029107354'
     },
     {
         'name': 'PlayStation 5 Slim',
