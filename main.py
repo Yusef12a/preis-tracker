@@ -34,7 +34,7 @@ PRODUCTS = [
     },
     {
         'name': 'KOPP Vital Bio-Aloe-Vera-Saft ',
-        'url': 'https://amzn.eu/d/0i79oBqQ'
+        'url': 'https://www.amazon.de/dp/B09B7GW723'
     },
     # Füge weitere Produkte hinzu - WICHTIG: Format muss sein: /dp/PRODUKTID
 ]
