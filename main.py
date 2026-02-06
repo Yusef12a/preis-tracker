@@ -34,7 +34,7 @@ PRODUCTS = [
     },
     {
         'name': 'WF-C700N wireless In-Ear-Kopfhörer',
-        'url': 'https://www.otto.de/p/share/w/1729365106'
+        'url': 'https://www.otto.de/p/sony-wf-c700n-wireless-in-ear-kopfhoerer-noise-cancelling-bluetooth-bis-20-std-akkulaufzeit-multipoint-connection-1729365155/'
     }
 ]
 
